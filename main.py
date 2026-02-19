@@ -89,3 +89,39 @@ async def telegram_webhook(request: Request):
     send_telegram(chat_id, reply)
 
     return {"ok": True}
+    from fastapi import Request
+import requests
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+@app.post("/telegram")
+async def telegram_webhook(request: Request):
+    data = await request.json()
+
+    if "message" not in data:
+        return {"ok": True}
+
+    chat_id = data["message"]["chat"]["id"]
+    text = data["message"].get("text", "")
+
+    # llamamos a Sancho
+    api_key = os.getenv("OPENAI_API_KEY")
+    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+
+    client = OpenAI(api_key=api_key)
+
+    r = client.responses.create(
+        model=model,
+        input=f"Eres Sancho, un asistente útil y directo. Responde en español.\n\nUsuario: {text}"
+    )
+
+    respuesta = r.output_text
+
+    # enviamos respuesta a Telegram
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, json={
+        "chat_id": chat_id,
+        "text": respuesta
+    })
+
+    return {"ok": True}
