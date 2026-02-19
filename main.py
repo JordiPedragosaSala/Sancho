@@ -24,3 +24,26 @@ def chat(q: str = "Hola"):
     )
 
     return {"respuesta": r.output_text}
+    from fastapi import Request
+import requests
+
+@app.post("/telegram")
+async def telegram_webhook(request: Request):
+    data = await request.json()
+
+    if "message" in data:
+        text = data["message"].get("text", "")
+        chat_id = data["message"]["chat"]["id"]
+
+        # reutilizamos la función chat existente
+        respuesta = chat(q=text)
+
+        token = os.getenv("TELEGRAM_BOT_TOKEN")
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+
+        requests.post(url, json={
+            "chat_id": chat_id,
+            "text": respuesta["respuesta"]
+        })
+
+    return {"ok": True}
