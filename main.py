@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI
+import requests
+from fastapi import FastAPI, Request
 from openai import OpenAI
 
 app = FastAPI()
@@ -45,5 +46,46 @@ async def telegram_webhook(request: Request):
             "chat_id": chat_id,
             "text": respuesta["respuesta"]
         })
+
+    return {"ok": True}
+    TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+def send_telegram(chat_id: int, text: str):
+    if not TELEGRAM_TOKEN:
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, json={"chat_id": chat_id, "text": text})
+
+@app.post("/telegram")
+async def telegram_webhook(request: Request):
+    data = await request.json()
+
+    msg = data.get("message") or data.get("edited_message")
+    if not msg:
+        return {"ok": True}
+
+    chat_id = msg["chat"]["id"]
+    text = msg.get("text", "").strip()
+
+    if text == "/start":
+        send_telegram(chat_id, "Estoy vivo. Escríbeme algo y te respondo.")
+        return {"ok": True}
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+
+    if not api_key:
+        send_telegram(chat_id, "Falta OPENAI_API_KEY en Railway > Variables")
+        return {"ok": True}
+
+    client = OpenAI(api_key=api_key)
+
+    r = client.responses.create(
+        model=model,
+        input=f"Eres Sancho, un asistente útil y directo. Responde en español.\n\nUsuario: {text}"
+    )
+
+    reply = getattr(r, "output_text", None) or "No pude generar respuesta."
+    send_telegram(chat_id, reply)
 
     return {"ok": True}
