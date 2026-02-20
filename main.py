@@ -15,38 +15,39 @@ def send_telegram(chat_id, text):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     requests.post(url, json={"chat_id": chat_id, "text": text})
 
-
 @app.post("/telegram")
 async def telegram_webhook(request: Request):
-    data = await request.json()
 
+    data = await request.json()
     msg = data.get("message") or data.get("edited_message")
+
     if not msg:
         return {"ok": True}
 
     chat_id = msg["chat"]["id"]
     text = msg.get("text", "").strip()
 
-    # Respuesta rápida para probar
-    if text == "/start":
-        send_telegram(chat_id, "Estoy vivo. Escríbeme algo.")
+    # responder solo a texto real
+    if not text:
         return {"ok": True}
 
-    # IA
+    # API KEY
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
     if not api_key:
-        send_telegram(chat_id, "Falta OPENAI_API_KEY en Railway")
+        send_telegram(chat_id, "Falta OPENAI_API_KEY en Railway.")
         return {"ok": True}
 
     client = OpenAI(api_key=api_key)
 
     r = client.responses.create(
         model=model,
-        input=f"Responde en español de forma clara:\nUsuario: {text}"
+        input=f"Eres Sancho, un asistente útil y directo. Responde en español.\nUsuario: {text}"
     )
 
-    send_telegram(chat_id, r.output_text)
+    respuesta = r.output_text
+
+    send_telegram(chat_id, respuesta)
 
     return {"ok": True}
