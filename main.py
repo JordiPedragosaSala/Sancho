@@ -22,7 +22,13 @@ def chat(q: str = "Hola"):
     client = OpenAI(api_key=api_key)
     r = client.responses.create(
         model=model,
-        input=f"Eres Sancho, un asistente útil y directo. Responde en español.\nUsuario: {q}",
+        input=(
+    "Eres Sancho, un asistente útil y directo. Responde en español.\n"
+    "IMPORTANTE: No inventes datos, noticias ni hechos actuales. "
+    "Si el usuario pide 'noticias de hoy', 'última hora', o algo en tiempo real, "
+    "di claramente que no tienes acceso a internet/noticias en vivo y pide enlaces o titulares.\n\n"
+    f"Usuario: {text}"
+)
     )
     return {"respuesta": r.output_text}
 
@@ -73,7 +79,13 @@ async def telegram_webhook(request: Request):
     try:
         r = client.responses.create(
             model=model,
-            input=f"Eres Sancho, un asistente útil y directo. Responde en español.\nUsuario: {text}",
+            input=(
+    "Eres Sancho, un asistente útil y directo. Responde en español.\n"
+    "IMPORTANTE: No inventes datos, noticias ni hechos actuales. "
+    "Si el usuario pide 'noticias de hoy', 'última hora', o algo en tiempo real, "
+    "di claramente que no tienes acceso a internet/noticias en vivo y pide enlaces o titulares.\n\n"
+    f"Usuario: {text}"
+)
         )
         send_telegram(chat_id, r.output_text)
     except Exception:
