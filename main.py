@@ -66,11 +66,13 @@ async def telegram_webhook(request: Request):
 
     chat_id = msg["chat"]["id"]
     text = msg.get("text", "").strip()
-
-    if text == "/start":
+    
         send_telegram(chat_id, "Estoy vivo. Escríbeme algo y te respondo.")
         return {"ok": True}
-
+        # TEST: comprobar que Telegram llega
+        url = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}/sendMessage"
+        requests.post(url, json={"chat_id": chat_id, "text": f"OK, te he leído: {text}"})
+        return {"ok": True}    
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
